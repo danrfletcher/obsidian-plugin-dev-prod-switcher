@@ -48,7 +48,9 @@ export class DevProdSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		new Setting(containerEl).setName("Dev-Prod Switcher").setHeading();
+		// No top-level heading here by design — Obsidian's own settings nav
+		// already shows the plugin's name; repeating it in a heading is
+		// flagged as redundant.
 
 		if (!isDesktop()) {
 			containerEl.createEl("p", {
