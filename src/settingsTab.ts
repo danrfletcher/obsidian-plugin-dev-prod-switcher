@@ -322,11 +322,19 @@ export class DevProdSettingTab extends PluginSettingTab {
 					this.display();
 				};
 			}
-			if (stash.hasPluginStash && stash.stashBranch) {
+			// Only offer to restore the stash when the tree is actually clean.
+			// Otherwise this and "Stash" can both be true at once — a stale
+			// plugin stash sitting around *and* fresh, unrelated dirty content
+			// (e.g. a dev server that kept rewriting files after the stash) —
+			// and popping onto a dirty tree can conflict and fail outright.
+			// Only one "parked" state is ever surfaced at a time; if that's not
+			// enough, the CLI remains the escape hatch (as noted in the button
+			// itself never applying to any branch other than where it was
+			// stashed from — see popStashAndReturn).
+			if (!info.isDirty && stash.hasPluginStash && stash.stashBranch) {
 				const stashRow = section.createDiv({ cls: "dpps-controls-row" });
-				const sameBranch = stash.stashBranch === info.current;
 				const popBtn = stashRow.createEl("button", {
-					text: sameBranch ? "Pop stash" : `Return to ${stash.stashBranch} and pop`,
+					text: `Return to ${stash.stashBranch} & Pop Stash`,
 				});
 				popBtn.onclick = async () => {
 					try {

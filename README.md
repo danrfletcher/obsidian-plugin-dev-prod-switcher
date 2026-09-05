@@ -54,9 +54,13 @@ You'll also need Hot Reload installed and enabled — same way, or from its own
    - If the dev folder is a git repo: a branch dropdown (local branches and
      `origin/...` remotes), **Pull**, and **Refresh**. If the tree is dirty,
      branch switching is blocked and a **Stash** button appears instead;
-     after stashing, a **Return to `<branch>` and pop** button (or **Pop
-     stash**, if you're still on that branch) shows up so you can get back
-     to that work later without hunting through `git stash list` yourself.
+     once stashed and the tree is clean again, a **Return to `<branch>` &
+     Pop Stash** button shows up so you can get back to that work later
+     without hunting through `git stash list` yourself. That button only
+     ever appears while the tree is clean — if you've since made new
+     changes (on this branch or another), it hides again until you stash or
+     resolve those too, so there's never more than one "parked" state
+     offered at once.
    - **Unlink**, which removes the wrapper it created (see below) without
      touching your dev folder or the real plugin's files.
 

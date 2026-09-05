@@ -95,13 +95,26 @@ export async function stashChanges(folder: string, branch: string): Promise<void
 	]);
 }
 
-/** T5 AC7: check the stashed-from branch back out, then pop. If the pop
- * conflicts, git leaves the stash entry in place (its own default
- * behaviour) and the error surfaces to the caller as-is. */
+/**
+ * T5 AC7: check the stashed-from branch back out, then pop — never onto
+ * whatever branch happens to be checked out, always the one the stash was
+ * taken from. Re-checks the tree is clean right before acting (the settings
+ * tab already hides this action whenever it isn't, but a change can land in
+ * the gap between a render and a click) rather than letting `git stash pop`
+ * fail with a raw conflict error. If the pop itself still conflicts, git
+ * leaves the stash entry in place (its own default behaviour) and the error
+ * surfaces to the caller as-is.
+ */
 export async function popStashAndReturn(
 	folder: string,
 	branch: string
 ): Promise<void> {
+	const info = await getBranchInfo(folder);
+	if (info.isDirty) {
+		throw new Error(
+			"Working tree has uncommitted changes — stash or commit them before restoring the parked stash."
+		);
+	}
 	await runGit(folder, ["checkout", branch]);
 	await runGit(folder, ["stash", "pop"]);
 }
