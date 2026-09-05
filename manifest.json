@@ -1,0 +1,11 @@
+{
+	"id": "dev-prod-plugin-switcher",
+	"name": "Dev/Prod Plugin Switcher",
+	"version": "0.1.0",
+	"minAppVersion": "1.5.0",
+	"description": "Register your installed plugins, link each to a local dev build, and hot-reload between the dev build and the live version. Desktop only, requires Hot Reload.",
+	"author": "Dan Fletcher",
+	"authorUrl": "https://github.com/danrfletcher",
+	"fundingUrl": "",
+	"isDesktopOnly": true
+}

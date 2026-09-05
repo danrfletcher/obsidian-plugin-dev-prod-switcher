@@ -1,0 +1,25 @@
+{
+	"name": "dev-prod-plugin-switcher",
+	"version": "0.1.0",
+	"description": "Register your installed Obsidian plugins, link each to a local dev build, and hot-reload between the dev build and the live version.",
+	"main": "main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"lint": "tsc -noEmit -skipLibCheck"
+	},
+	"keywords": [],
+	"author": "Dan Fletcher",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^20.14.9",
+		"@typescript-eslint/eslint-plugin": "^7.16.0",
+		"@typescript-eslint/parser": "^7.16.0",
+		"builtin-modules": "^3.3.0",
+		"esbuild": "^0.21.5",
+		"obsidian": "^1.5.7-1",
+		"tslib": "^2.6.3",
+		"typescript": "^5.5.3"
+	}
+}
