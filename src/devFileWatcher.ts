@@ -17,7 +17,7 @@ const DEBOUNCE_MS = 150;
  */
 export class DevFileWatcher {
 	private watchers = new Map<string, fs.FSWatcher>();
-	private timers = new Map<string, ReturnType<typeof setTimeout>>();
+	private timers = new Map<string, number>();
 
 	watch(
 		app: App,
@@ -29,10 +29,10 @@ export class DevFileWatcher {
 		try {
 			const watcher = fs.watch(devFolderPath, () => {
 				const existing = this.timers.get(realId);
-				if (existing) clearTimeout(existing);
+				if (existing) window.clearTimeout(existing);
 				this.timers.set(
 					realId,
-					setTimeout(() => {
+					window.setTimeout(() => {
 						this.timers.delete(realId);
 						try {
 							syncDevWrapper(app, realId, realName, devFolderPath);
@@ -55,7 +55,7 @@ export class DevFileWatcher {
 		this.watchers.get(realId)?.close();
 		this.watchers.delete(realId);
 		const timer = this.timers.get(realId);
-		if (timer) clearTimeout(timer);
+		if (timer) window.clearTimeout(timer);
 		this.timers.delete(realId);
 	}
 

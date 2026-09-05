@@ -26,6 +26,20 @@ import {
 } from "./gitBranches";
 import { isDesktop } from "./util/platform";
 
+/**
+ * DOM event handler properties (onclick/onchange/…) are typed to accept
+ * `(ev) => any`, but @typescript-eslint's no-misused-promises rule still
+ * flags assigning an async function to them directly (an unhandled
+ * rejection in an event handler is a real, common bug class). Wraps an
+ * async handler in a synchronous one that explicitly discards the promise
+ * with `void`, which is the rule's own recommended fix.
+ */
+function fireAndForget(fn: () => Promise<void>): () => void {
+	return () => {
+		void fn();
+	};
+}
+
 export class DevProdSettingTab extends PluginSettingTab {
 	constructor(app: App, private plugin: DevProdSwitcherPlugin) {
 		super(app, plugin);
@@ -34,7 +48,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.createEl("h1", { text: "Dev-Prod Plugin Switcher" });
+		new Setting(containerEl).setName("Dev-Prod Switcher").setHeading();
 
 		if (!isDesktop()) {
 			containerEl.createEl("p", {
@@ -74,7 +88,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 	}
 
 	private renderLinkSection(container: HTMLElement, hotReloadOk: boolean): void {
-		container.createEl("h2", { text: "Link a plugin" });
+		new Setting(container).setName("Link a plugin").setHeading();
 		const registeredIds = new Set(this.plugin.settings.registered.map((r) => r.id));
 		const ownId = this.plugin.manifest.id;
 		const eligible = Object.values(this.app.plugins.manifests)
@@ -105,33 +119,35 @@ export class DevProdSettingTab extends PluginSettingTab {
 					.setCta()
 					.onClick(() => {
 						const manifest = this.app.plugins.manifests[selectedId];
-						new LinkDevFolderModal(this.app, manifest.name, async (folderPath, command) => {
-							const reg: RegisteredPlugin = {
-								id: manifest.id,
-								name: manifest.name,
-								devFolderPath: folderPath,
-								devServerCommand: command,
-								lastKnownMode: "prod",
-							};
-							syncDevWrapper(this.app, reg.id, reg.name, reg.devFolderPath);
-							await refreshManifests(this.app);
-							this.plugin.settings.registered.push(reg);
-							await this.plugin.saveSettings();
-							this.plugin.devFileWatcher.watch(
-								this.app,
-								reg.id,
-								reg.name,
-								reg.devFolderPath
-							);
-							new Notice(`Linked ${reg.name}. Hot Reload will pick up its dev build on the next change.`);
-							this.display();
+						new LinkDevFolderModal(this.app, manifest.name, (folderPath, command) => {
+							void (async () => {
+								const reg: RegisteredPlugin = {
+									id: manifest.id,
+									name: manifest.name,
+									devFolderPath: folderPath,
+									devServerCommand: command,
+									lastKnownMode: "prod",
+								};
+								syncDevWrapper(this.app, reg.id, reg.name, reg.devFolderPath);
+								await refreshManifests(this.app);
+								this.plugin.settings.registered.push(reg);
+								await this.plugin.saveSettings();
+								this.plugin.devFileWatcher.watch(
+									this.app,
+									reg.id,
+									reg.name,
+									reg.devFolderPath
+								);
+								new Notice(`Linked ${reg.name}. Hot Reload will pick up its dev build on the next change.`);
+								this.display();
+							})();
 						}).open();
 					})
 			);
 	}
 
 	private renderManagedSection(container: HTMLElement, hotReloadOk: boolean): void {
-		container.createEl("h2", { text: "Managed plugins" });
+		new Setting(container).setName("Managed plugins").setHeading();
 		const { registered } = this.plugin.settings;
 		if (registered.length === 0) {
 			container.createEl("p", { text: "No plugins linked yet.", cls: "dpps-muted" });
@@ -163,7 +179,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 
 		const headerButtons = header.createDiv();
 		const unlinkBtn = headerButtons.createEl("button", { text: "Unlink" });
-		unlinkBtn.onclick = async () => {
+		unlinkBtn.onclick = fireAndForget(async () => {
 			if (this.plugin.devServerManager.isRunning(reg.id)) {
 				await this.plugin.devServerManager.kill(reg.id);
 			}
@@ -175,7 +191,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 			await this.plugin.saveSettings();
 			new Notice(`Unlinked ${reg.name}.`);
 			this.display();
-		};
+		});
 
 		row.createEl("div", { text: reg.devFolderPath, cls: "dpps-muted" });
 
@@ -209,7 +225,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 		const btn = controls.createEl("button", {
 			text: `Switch to ${targetMode === "dev" ? "Dev" : "Prod"}`,
 		});
-		btn.onclick = async () => {
+		btn.onclick = fireAndForget(async () => {
 			const doSwitch = async () => {
 				try {
 					await applyMode(this.app, reg.id, reg.name, targetMode);
@@ -239,7 +255,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 					i < 10 && currentMode(this.app, reg.id) !== targetMode;
 					i++
 				) {
-					await new Promise((resolve) => setTimeout(resolve, 50));
+					await new Promise((resolve) => window.setTimeout(resolve, 50));
 				}
 				this.display();
 			};
@@ -247,12 +263,12 @@ export class DevProdSettingTab extends PluginSettingTab {
 				new ConfirmModal(
 					this.app,
 					`${reg.name}'s dev server isn't running — the dev build may be stale or empty. Switch to Dev anyway?`,
-					doSwitch
+					fireAndForget(doSwitch)
 				).open();
 			} else {
 				await doSwitch();
 			}
-		};
+		});
 	}
 
 	private renderDevServerControls(row: HTMLElement, reg: RegisteredPlugin): void {
@@ -263,19 +279,19 @@ export class DevProdSettingTab extends PluginSettingTab {
 
 		if (state.status === "running") {
 			const killBtn = controls.createEl("button", { text: "Kill" });
-			killBtn.onclick = async () => {
+			killBtn.onclick = fireAndForget(async () => {
 				await this.plugin.devServerManager.kill(reg.id);
 				this.display();
-			};
+			});
 			const restartBtn = controls.createEl("button", { text: "Restart" });
-			restartBtn.onclick = async () => {
+			restartBtn.onclick = fireAndForget(async () => {
 				await this.plugin.devServerManager.restart(
 					reg.id,
 					reg.devFolderPath,
 					reg.devServerCommand
 				);
 				this.display();
-			};
+			});
 		} else {
 			const runBtn = controls.createEl("button", { text: "Run Dev Server" });
 			runBtn.onclick = () => {
@@ -300,7 +316,10 @@ export class DevProdSettingTab extends PluginSettingTab {
 		const section = row.createDiv();
 		section.createEl("div", { text: "Loading branches…", cls: "dpps-muted" });
 
-		Promise.all([
+		// `void`-marked: a standalone (not awaited/returned) promise chain is
+		// otherwise flagged as floating. Both calls already swallow their own
+		// git-command failures internally, so this realistically never rejects.
+		void Promise.all([
 			getBranchInfo(reg.devFolderPath),
 			getStashInfo(reg.devFolderPath),
 		]).then(([info, stash]) => {
@@ -312,7 +331,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 					cls: "dpps-muted",
 				});
 				const stashBtn = dirtyRow.createEl("button", { text: "Stash" });
-				stashBtn.onclick = async () => {
+				stashBtn.onclick = fireAndForget(async () => {
 					try {
 						await stashChanges(reg.devFolderPath, info.current ?? "HEAD");
 						new Notice(`Stashed changes for ${reg.name}.`);
@@ -320,7 +339,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 						new Notice(`Stash failed: ${(e as Error).message}`);
 					}
 					this.display();
-				};
+				});
 			}
 			// Only offer to restore the stash when the tree is actually clean.
 			// Otherwise this and "Stash" can both be true at once — a stale
@@ -336,7 +355,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 				const popBtn = stashRow.createEl("button", {
 					text: `Return to ${stash.stashBranch} & Pop Stash`,
 				});
-				popBtn.onclick = async () => {
+				popBtn.onclick = fireAndForget(async () => {
 					try {
 						await popStashAndReturn(reg.devFolderPath, stash.stashBranch as string);
 						new Notice(`Restored stashed changes for ${reg.name} on ${stash.stashBranch}.`);
@@ -344,7 +363,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 						new Notice(`Pop failed: ${(e as Error).message}`);
 					}
 					this.display();
-				};
+				});
 			}
 			const controls = section.createDiv({ cls: "dpps-controls-row" });
 			const select = controls.createEl("select");
@@ -360,7 +379,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 				}
 			}
 			select.disabled = info.isDirty;
-			select.onchange = async () => {
+			select.onchange = fireAndForget(async () => {
 				const [kind, ...rest] = select.value.split(":");
 				const branch = rest.join(":");
 				try {
@@ -370,11 +389,11 @@ export class DevProdSettingTab extends PluginSettingTab {
 					new Notice(`Checkout failed: ${(e as Error).message}`);
 				}
 				this.display();
-			};
+			});
 
 			const pullBtn = controls.createEl("button", { text: "Pull" });
 			pullBtn.disabled = info.isDirty || !info.current;
-			pullBtn.onclick = async () => {
+			pullBtn.onclick = fireAndForget(async () => {
 				try {
 					await pullCurrentBranch(reg.devFolderPath);
 					new Notice(`Pulled latest for ${reg.name}.`);
@@ -382,17 +401,17 @@ export class DevProdSettingTab extends PluginSettingTab {
 					new Notice(`Pull failed: ${(e as Error).message}`);
 				}
 				this.display();
-			};
+			});
 
 			const refreshBtn = controls.createEl("button", { text: "Refresh" });
-			refreshBtn.onclick = async () => {
+			refreshBtn.onclick = fireAndForget(async () => {
 				try {
 					await fetchRemote(reg.devFolderPath);
 				} catch (e) {
 					new Notice(`Fetch failed: ${(e as Error).message}`);
 				}
 				this.display();
-			};
+			});
 		});
 	}
 }

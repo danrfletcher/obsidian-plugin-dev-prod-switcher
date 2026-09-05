@@ -1,9 +1,9 @@
 ---
-title: Dev-Prod Plugin Switcher
+title: Dev-Prod Switcher
 description: Link an installed Obsidian plugin to a local dev build, flip between them with hot reload, and control the dev server — all from Obsidian's settings.
 ---
 
-# Dev-Prod Plugin Switcher
+# Dev-Prod Switcher
 
 An [Obsidian](https://obsidian.md) plugin for **plugin developers**. Register
 a plugin you already have installed, link it to your local dev build, and

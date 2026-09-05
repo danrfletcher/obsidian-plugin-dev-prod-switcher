@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -23,6 +25,14 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Cryptographically ties main.js/styles.css back to this repo + workflow
+      # run, so users (and Obsidian's own review) can verify the published
+      # assets were actually built from the source visible here.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: "main.js, styles.css"
 
       - name: Package and create release
         env:

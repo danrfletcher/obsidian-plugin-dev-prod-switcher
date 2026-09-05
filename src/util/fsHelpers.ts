@@ -9,7 +9,7 @@ export function getVaultBasePath(app: App): string {
 		return adapter.getBasePath();
 	}
 	throw new Error(
-		"Dev-Prod Plugin Switcher: no filesystem adapter available (not running on desktop)."
+		"Dev-Prod Switcher: no filesystem adapter available (not running on desktop)."
 	);
 }
 
@@ -87,7 +87,11 @@ export function ensureDir(p: string): void {
 
 export function readJson<T>(p: string): T | null {
 	try {
-		return JSON.parse(fs.readFileSync(p, "utf8")) as T;
+		// Route through `unknown` rather than casting JSON.parse's `any`
+		// straight to T — same static result, but avoids "unsafe return"
+		// lint findings at every call site that pass a generic through here.
+		const parsed: unknown = JSON.parse(fs.readFileSync(p, "utf8"));
+		return parsed as T;
 	} catch {
 		return null;
 	}

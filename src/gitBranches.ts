@@ -1,4 +1,4 @@
-import { execFile } from "child_process";
+import { execFile, ExecFileException } from "child_process";
 import * as fsh from "./util/fsHelpers";
 import * as path from "path";
 import { GitBranchInfo, StashInfo } from "./types";
@@ -15,18 +15,24 @@ const STASH_TAG = "dpps-stash";
 
 function runGit(cwd: string, args: string[]): Promise<string> {
 	return new Promise((resolve, reject) => {
-		execFile(
-			"git",
-			args,
-			{ cwd, maxBuffer: 10 * 1024 * 1024 },
-			(err, stdout, stderr) => {
-				if (err) {
-					reject(new Error(stderr?.trim() || err.message));
-					return;
-				}
-				resolve(stdout.trim());
+		// execFile's callback-shape overloads resolve to implicit `any`
+		// parameters unless the callback itself is explicitly typed (its
+		// options-object overloads are keyed off an exact `encoding` field we
+		// don't pass) — typed explicitly here rather than inferred, since an
+		// untyped callback here was the root cause of an "any" cascading
+		// through every caller of this function.
+		const onExit = (
+			err: ExecFileException | null,
+			stdout: string,
+			stderr: string
+		): void => {
+			if (err) {
+				reject(new Error(stderr.trim() || err.message));
+				return;
 			}
-		);
+			resolve(stdout.trim());
+		};
+		execFile("git", args, { cwd, maxBuffer: 10 * 1024 * 1024 }, onExit);
 	});
 }
 

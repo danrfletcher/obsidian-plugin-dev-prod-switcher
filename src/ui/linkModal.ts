@@ -2,6 +2,27 @@ import { App, Modal, Setting, Notice } from "obsidian";
 import { DEFAULT_DEV_SERVER_COMMAND } from "../constants";
 
 /**
+ * Obsidian's desktop renderer exposes `window.require` for plugins, and
+ * (legacy-compatibly) `@electron/remote` through it. Typed narrowly here —
+ * just the two calls this file actually makes — rather than pulling in
+ * Electron's own types for one function.
+ */
+interface ElectronRemoteModule {
+	remote?: {
+		dialog?: {
+			showOpenDialogSync?: (options: {
+				properties: string[];
+			}) => string[] | undefined;
+		};
+	};
+}
+
+function getWindowRequire(): ((id: string) => ElectronRemoteModule) | undefined {
+	return (window as unknown as { require?: (id: string) => ElectronRemoteModule })
+		.require;
+}
+
+/**
  * Folder path entry for "Link local dev build" (§5.1 AC2). Tries Electron's
  * native folder-picker dialog first — Obsidian's desktop renderer exposes
  * `@electron/remote` to plugins for exactly this kind of legacy-compatible
@@ -11,13 +32,10 @@ import { DEFAULT_DEV_SERVER_COMMAND } from "../constants";
  */
 function tryOpenFolderDialog(): string | null {
 	try {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const electron = (window as any).require?.("electron");
-		const remote = electron?.remote;
-		if (!remote?.dialog?.showOpenDialogSync) return null;
-		const result = remote.dialog.showOpenDialogSync({
-			properties: ["openDirectory"],
-		});
+		const electron = getWindowRequire()?.("electron");
+		const dialog = electron?.remote?.dialog;
+		if (!dialog?.showOpenDialogSync) return null;
+		const result = dialog.showOpenDialogSync({ properties: ["openDirectory"] });
 		return result && result[0] ? result[0] : null;
 	} catch {
 		return null;
