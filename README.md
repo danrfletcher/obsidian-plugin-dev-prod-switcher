@@ -52,7 +52,11 @@ You'll also need Hot Reload installed and enabled — same way, or from its own
    - **Run Dev Server** / **Kill** / **Restart**, a status indicator, and a
      collapsible log panel.
    - If the dev folder is a git repo: a branch dropdown (local branches and
-     `origin/...` remotes), **Pull**, and **Refresh**.
+     `origin/...` remotes), **Pull**, and **Refresh**. If the tree is dirty,
+     branch switching is blocked and a **Stash** button appears instead;
+     after stashing, a **Return to `<branch>` and pop** button (or **Pop
+     stash**, if you're still on that branch) shows up so you can get back
+     to that work later without hunting through `git stash list` yourself.
    - **Unlink**, which removes the wrapper it created (see below) without
      touching your dev folder or the real plugin's files.
 

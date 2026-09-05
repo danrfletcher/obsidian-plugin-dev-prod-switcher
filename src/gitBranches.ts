@@ -1,7 +1,17 @@
 import { execFile } from "child_process";
 import * as fsh from "./util/fsHelpers";
 import * as path from "path";
-import { GitBranchInfo } from "./types";
+import { GitBranchInfo, StashInfo } from "./types";
+
+/**
+ * Tag put in the stash message so we only ever offer to pop a stash *this
+ * plugin* created — never a stash the user made themselves outside it. Also
+ * records which branch it was stashed from, since `git stash pop` always
+ * pops stash@{0} in place on whatever branch you're currently on, and the
+ * whole point of "Return to <branch> and pop" is to check that branch back
+ * out first.
+ */
+const STASH_TAG = "dpps-stash";
 
 function runGit(cwd: string, args: string[]): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -49,6 +59,51 @@ export async function getBranchInfo(folder: string): Promise<GitBranchInfo> {
 		isRepo: true,
 		isDirty: statusRaw.length > 0,
 	};
+}
+
+/**
+ * T5 AC7: is the top of the stash stack (stash@{0}) one this plugin created,
+ * and if so which branch was it stashed from? Only ever looks at stash@{0}
+ * — if the user has since pushed their own stash on top, we don't surface a
+ * pop option at all rather than risk popping the wrong one.
+ */
+export async function getStashInfo(folder: string): Promise<StashInfo> {
+	if (!isGitRepo(folder)) return { hasPluginStash: false, stashBranch: null };
+	const list = await runGit(folder, ["stash", "list", "--format=%s"]).catch(
+		() => ""
+	);
+	const top = list.split("\n")[0] ?? "";
+	// `git stash push -m "<msg>"` stores the subject as "On <branch>: <msg>",
+	// so match our tag anywhere in the string rather than anchoring at the
+	// start (confirmed live 2026-09-05 — anchoring at "^" never matched).
+	const match = top.match(new RegExp(`${STASH_TAG}:(.+):\\d+$`));
+	if (!match) return { hasPluginStash: false, stashBranch: null };
+	return { hasPluginStash: true, stashBranch: match[1] };
+}
+
+/** T5 AC7: stash everything (including untracked files) so the tree is
+ * actually clean afterward — an untracked file left behind would still
+ * trip the dirty check and defeat the point of stashing to unblock a
+ * branch switch. */
+export async function stashChanges(folder: string, branch: string): Promise<void> {
+	await runGit(folder, [
+		"stash",
+		"push",
+		"--include-untracked",
+		"-m",
+		`${STASH_TAG}:${branch}:${Date.now()}`,
+	]);
+}
+
+/** T5 AC7: check the stashed-from branch back out, then pop. If the pop
+ * conflicts, git leaves the stash entry in place (its own default
+ * behaviour) and the error surfaces to the caller as-is. */
+export async function popStashAndReturn(
+	folder: string,
+	branch: string
+): Promise<void> {
+	await runGit(folder, ["checkout", branch]);
+	await runGit(folder, ["stash", "pop"]);
 }
 
 /** T5 AC4: re-list without switching anything — remote branches can change independently. */

@@ -18,8 +18,11 @@ import {
 	checkoutBranch,
 	fetchRemote,
 	getBranchInfo,
+	getStashInfo,
 	isGitRepo,
+	popStashAndReturn,
 	pullCurrentBranch,
+	stashChanges,
 } from "./gitBranches";
 import { isDesktop } from "./util/platform";
 
@@ -297,13 +300,43 @@ export class DevProdSettingTab extends PluginSettingTab {
 		const section = row.createDiv();
 		section.createEl("div", { text: "Loading branches…", cls: "dpps-muted" });
 
-		getBranchInfo(reg.devFolderPath).then((info) => {
+		Promise.all([
+			getBranchInfo(reg.devFolderPath),
+			getStashInfo(reg.devFolderPath),
+		]).then(([info, stash]) => {
 			section.empty();
 			if (info.isDirty) {
-				section.createEl("div", {
+				const dirtyRow = section.createDiv({ cls: "dpps-controls-row" });
+				dirtyRow.createSpan({
 					text: "Working tree has uncommitted changes — branch switching is disabled until it's clean.",
 					cls: "dpps-muted",
 				});
+				const stashBtn = dirtyRow.createEl("button", { text: "Stash" });
+				stashBtn.onclick = async () => {
+					try {
+						await stashChanges(reg.devFolderPath, info.current ?? "HEAD");
+						new Notice(`Stashed changes for ${reg.name}.`);
+					} catch (e) {
+						new Notice(`Stash failed: ${(e as Error).message}`);
+					}
+					this.display();
+				};
+			}
+			if (stash.hasPluginStash && stash.stashBranch) {
+				const stashRow = section.createDiv({ cls: "dpps-controls-row" });
+				const sameBranch = stash.stashBranch === info.current;
+				const popBtn = stashRow.createEl("button", {
+					text: sameBranch ? "Pop stash" : `Return to ${stash.stashBranch} and pop`,
+				});
+				popBtn.onclick = async () => {
+					try {
+						await popStashAndReturn(reg.devFolderPath, stash.stashBranch as string);
+						new Notice(`Restored stashed changes for ${reg.name} on ${stash.stashBranch}.`);
+					} catch (e) {
+						new Notice(`Pop failed: ${(e as Error).message}`);
+					}
+					this.display();
+				};
 			}
 			const controls = section.createDiv({ cls: "dpps-controls-row" });
 			const select = controls.createEl("select");

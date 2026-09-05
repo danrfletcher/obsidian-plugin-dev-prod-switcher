@@ -37,3 +37,10 @@ export interface GitBranchInfo {
 	isRepo: boolean;
 	isDirty: boolean;
 }
+
+export interface StashInfo {
+	/** Whether stash@{0} is one this plugin created (see gitBranches.ts). */
+	hasPluginStash: boolean;
+	/** The branch it was stashed from, if hasPluginStash is true. */
+	stashBranch: string | null;
+}
