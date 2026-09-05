@@ -1,6 +1,6 @@
 {
 	"name": "dev-prod-plugin-switcher",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"description": "Register your installed Obsidian plugins, link each to a local dev build, and hot-reload between the dev build and the live version.",
 	"main": "main.js",
 	"scripts": {
