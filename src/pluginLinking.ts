@@ -56,7 +56,7 @@ export function syncDevWrapper(
 		minAppVersion: sourceManifest.minAppVersion ?? "0.15.0",
 		description:
 			sourceManifest.description ??
-			"Local dev build, linked by Dev/Prod Plugin Switcher.",
+			"Local dev build, linked by Dev-Prod Plugin Switcher.",
 		author: sourceManifest.author ?? realName,
 		authorUrl: sourceManifest.authorUrl,
 		isDesktopOnly: sourceManifest.isDesktopOnly ?? false,

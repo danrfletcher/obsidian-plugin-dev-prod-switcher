@@ -34,7 +34,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		containerEl.createEl("h1", { text: "Dev/Prod Plugin Switcher" });
+		containerEl.createEl("h1", { text: "Dev-Prod Plugin Switcher" });
 
 		if (!isDesktop()) {
 			containerEl.createEl("p", {
@@ -62,7 +62,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 		});
 		banner.createEl("p", {
 			text:
-				"The Dev/Prod toggle depends entirely on pjeby's Hot Reload plugin (MIT licensed) to actually reload a plugin when its dev build changes. Until it's installed and enabled, the toggle and dev-server controls stay hidden here so you can't register a plugin for dev mode that nothing will ever reload.",
+				"The Dev-Prod toggle depends entirely on pjeby's Hot Reload plugin (MIT licensed) to actually reload a plugin when its dev build changes. Until it's installed and enabled, the toggle and dev-server controls stay hidden here so you can't register a plugin for dev mode that nothing will ever reload.",
 		});
 		const links = banner.createDiv();
 		links.createEl("a", { text: "Hot Reload on GitHub", href: HOT_RELOAD_REPO_URL });
@@ -199,7 +199,7 @@ export class DevProdSettingTab extends PluginSettingTab {
 	): void {
 		if (!hotReloadOk) {
 			row.createEl("p", {
-				text: "Dev/Prod toggle hidden until Hot Reload is installed and enabled (see banner above).",
+				text: "Dev-Prod toggle hidden until Hot Reload is installed and enabled (see banner above).",
 				cls: "dpps-muted",
 			});
 			return;

@@ -1,9 +1,9 @@
 ---
-title: Dev/Prod Plugin Switcher
+title: Dev-Prod Plugin Switcher
 description: Link an installed Obsidian plugin to a local dev build, flip between them with hot reload, and control the dev server — all from Obsidian's settings.
 ---
 
-# Dev/Prod Plugin Switcher
+# Dev-Prod Plugin Switcher
 
 An [Obsidian](https://obsidian.md) plugin for **plugin developers**. Register
 a plugin you already have installed, link it to your local dev build, and
@@ -29,7 +29,7 @@ This plugin adds:
 
 - A settings-panel **registry** of which installed plugins have a linked dev
   build.
-- A **one-click Dev/Prod toggle** that hot-reloads via Hot Reload — this
+- A **one-click Dev-Prod toggle** that hot-reloads via Hot Reload — this
   plugin doesn't reimplement any file-watching or reload logic itself.
 - **Dev-server lifecycle controls** (run / kill / restart, live logs) per
   linked plugin.

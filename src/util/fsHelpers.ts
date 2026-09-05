@@ -9,7 +9,7 @@ export function getVaultBasePath(app: App): string {
 		return adapter.getBasePath();
 	}
 	throw new Error(
-		"Dev/Prod Plugin Switcher: no filesystem adapter available (not running on desktop)."
+		"Dev-Prod Plugin Switcher: no filesystem adapter available (not running on desktop)."
 	);
 }
 

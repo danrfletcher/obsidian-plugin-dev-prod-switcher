@@ -1,4 +1,4 @@
-# Dev/Prod Plugin Switcher
+# Dev-Prod Plugin Switcher
 
 An [Obsidian](https://obsidian.md) plugin for **plugin developers**. Register a
 plugin you already have installed, link it to your local dev build, and flip
@@ -27,7 +27,7 @@ something real to watch (see [How it works](#how-it-works)) and give you a
 one-click way to flip which build is live.
 
 If Hot Reload isn't installed and enabled, this plugin's settings tab hides
-the Dev/Prod toggle and dev-server controls entirely and shows a banner
+the Dev-Prod toggle and dev-server controls entirely and shows a banner
 explaining why, with a link to Hot Reload's repo. It won't let you register a
 plugin for dev mode that nothing will ever reload.
 
@@ -42,7 +42,7 @@ You'll also need Hot Reload installed and enabled — same way, or from its own
 
 ## Usage
 
-1. Open **Settings → Dev/Prod Plugin Switcher**.
+1. Open **Settings → Dev-Prod Plugin Switcher**.
 2. Under **Link a plugin**, pick one of your installed plugins and click
    **Link…**. Point it at the local folder where that plugin's dev build
    outputs `main.js` (usually your plugin's repo root) and set the command
@@ -114,7 +114,7 @@ that may no longer exist.
 
 ## Compatibility notes
 
-The Dev/Prod toggle and Hot Reload's install/enabled check use Obsidian's
+The Dev-Prod toggle and Hot Reload's install/enabled check use Obsidian's
 internal (undocumented) `app.plugins` plugin manager — the same surface BRAT
 and Hot Reload itself rely on. Specifically: `enablePlugin()`/
 `disablePlugin()` update the live plugin instance but were found (tested live
