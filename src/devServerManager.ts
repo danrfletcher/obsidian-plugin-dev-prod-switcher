@@ -1,6 +1,6 @@
 import { ChildProcess, execFile, spawn } from "child_process";
 import { EventEmitter } from "events";
-import { DevServerRuntimeState, DevServerStatus } from "./types";
+import { DevServerRuntimeState } from "./types";
 import { MAX_LOG_LINES } from "./constants";
 import { isWindows } from "./util/platform";
 
@@ -17,9 +17,8 @@ export class DevServerManager extends EventEmitter {
 	private killingIntentionally = new Set<string>();
 
 	getState(realId: string): DevServerRuntimeState {
-		return (
-			this.state.get(realId) ?? { status: "stopped" as DevServerStatus, log: [] }
-		);
+		const stopped: DevServerRuntimeState = { status: "stopped", log: [] };
+		return this.state.get(realId) ?? stopped;
 	}
 
 	isRunning(realId: string): boolean {
@@ -49,10 +48,14 @@ export class DevServerManager extends EventEmitter {
 			this.setState(realId, { ...current, log });
 		};
 
-		child.stdout?.on("data", (c) => appendLog(c, "out"));
-		child.stderr?.on("data", (c) => appendLog(c, "err"));
+		// Explicitly typed rather than relying on inference: the 'data' event
+		// overload types its chunk as `any` (it can be a string when an
+		// encoding is set), which otherwise passes an unsafe value into
+		// appendLog's typed Buffer parameter.
+		child.stdout?.on("data", (c: Buffer) => appendLog(c, "out"));
+		child.stderr?.on("data", (c: Buffer) => appendLog(c, "err"));
 
-		child.on("exit", (code) => {
+		child.on("exit", (code: number | null) => {
 			this.processes.delete(realId);
 			const wasIntentional = this.killingIntentionally.delete(realId);
 			const current = this.getState(realId);
@@ -63,7 +66,7 @@ export class DevServerManager extends EventEmitter {
 			});
 		});
 
-		child.on("error", (err) => {
+		child.on("error", (err: Error) => {
 			this.processes.delete(realId);
 			const current = this.getState(realId);
 			this.setState(realId, {
@@ -108,7 +111,9 @@ export class DevServerManager extends EventEmitter {
 		}
 
 		await new Promise<void>((resolve) => {
-			const timer = setTimeout(() => {
+			// window.setTimeout/clearTimeout rather than the bare globals, per
+			// Obsidian's popout-window guidance.
+			const timer = window.setTimeout(() => {
 				if (!isWindows()) {
 					try {
 						if (child.pid !== undefined) process.kill(-child.pid, "SIGKILL");
@@ -119,7 +124,7 @@ export class DevServerManager extends EventEmitter {
 				resolve();
 			}, 2000);
 			child.once("exit", () => {
-				clearTimeout(timer);
+				window.clearTimeout(timer);
 				resolve();
 			});
 		});

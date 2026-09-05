@@ -12,7 +12,7 @@ import { devId } from "./pluginLinking";
  * Community Plugins toggle state in every case tested.
  */
 export function isPluginActive(app: App, id: string): boolean {
-	return Boolean((app.plugins.plugins as Record<string, unknown>)[id]);
+	return Boolean(app.plugins.plugins[id]);
 }
 
 /**

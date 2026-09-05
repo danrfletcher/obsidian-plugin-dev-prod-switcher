@@ -34,8 +34,12 @@ export default class DevProdSwitcherPlugin extends Plugin {
 		}
 	}
 
-	async onunload(): Promise<void> {
-		await this.devServerManager.killAll();
+	onunload(): void {
+		// Plugin.onunload() is declared void — Obsidian doesn't await it, so
+		// there's no "returns a Promise where void was expected" signature to
+		// match. Fire the async cleanup and explicitly mark it not-awaited
+		// rather than declaring this method itself async.
+		void this.devServerManager.killAll();
 		this.devFileWatcher.unwatchAll();
 	}
 

@@ -1,4 +1,4 @@
-# Dev-Prod Plugin Switcher
+# Dev-Prod Switcher
 
 An [Obsidian](https://obsidian.md) plugin for **plugin developers**. Register a
 plugin you already have installed, link it to your local dev build, and flip
@@ -42,7 +42,7 @@ You'll also need Hot Reload installed and enabled — same way, or from its own
 
 ## Usage
 
-1. Open **Settings → Dev-Prod Plugin Switcher**.
+1. Open **Settings → Dev-Prod Switcher**.
 2. Under **Link a plugin**, pick one of your installed plugins and click
    **Link…**. Point it at the local folder where that plugin's dev build
    outputs `main.js` (usually your plugin's repo root) and set the command
